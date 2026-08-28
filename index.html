@@ -1,117 +1,124 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Location</title>
-
-  <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-      padding: 40px 15px;
-      background: #f2f5f9;
-    }
-
-    .box {
-      max-width: 400px;
-      margin: auto;
-      background: white;
-      padding: 25px;
-      border-radius: 15px;
-      box-shadow: 0 4px 15px #ccc;
-    }
-
-    #status {
-      margin-top: 20px;
-      line-height: 1.7;
-    }
-
-    a {
-      display: inline-block;
-      margin-top: 15px;
-      padding: 12px 20px;
-      background: #1976d2;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-    }
-  </style>
+  <title>Friend Location</title>
 </head>
 
-<body>
+<body style="text-align:center;font-family:Arial;padding:30px">
 
-<div class="box">
+  <h2>📍 Friend Location</h2>
 
-  <h2>📍 Location</h2>
+  <p id="status">Checking location permission...</p>
 
-  <p id="status">Getting location permission...</p>
+  <div id="location"></div>
 
-</div>
+  <!-- Firebase -->
+  <script type="module">
 
-<script>
+    import { initializeApp }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-window.onload = function () {
+    import {
+      getDatabase,
+      ref,
+      set
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  const status = document.getElementById("status");
 
-  if (!navigator.geolocation) {
+    const firebaseConfig = {
+      apiKey: "AIzaSyCB4jQxUE7RBcH4EFs0F20yfud5piS8qfQ",
+      authDomain: "ar07-2c19b.firebaseapp.com",
+      databaseURL: "https://ar07-2c19b-default-rtdb.firebaseio.com",
+      projectId: "ar07-2c19b",
+      storageBucket: "ar07-2c19b.firebasestorage.app",
+      messagingSenderId: "779000469231",
+      appId: "1:779000469231:web:4e6c83f81c42379cfced1a",
+      measurementId: "G-TFC454RWYD"
+    };
 
-    status.innerHTML =
-      "❌ This browser does not support location.";
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
 
-    return;
-  }
 
-  navigator.geolocation.getCurrentPosition(
+    function getLocation() {
 
-    function(position) {
+      const status = document.getElementById("status");
 
-      const lat = position.coords.latitude;
-      const lon = position.coords.longitude;
-
-      const map =
-        "https://www.google.com/maps?q="
-        + lat + "," + lon;
-
-      status.innerHTML =
-        "✅ Location available<br><br>" +
-
-        "Latitude: " + lat + "<br>" +
-        "Longitude: " + lon +
-
-        "<br><br>" +
-
-        "<a href='" + map +
-        "' target='_blank'>" +
-        "🗺️ Open Google Maps" +
-        "</a>";
-    },
-
-    function(error) {
-
-      if (error.code === 1) {
-
-        status.innerHTML =
-          "❌ Location permission was denied.";
-
-      } else {
-
-        status.innerHTML =
-          "❌ Could not get location. Please try again.";
+      if (!navigator.geolocation) {
+        status.innerHTML = "❌ Location not supported";
+        return;
       }
-    },
 
-    {
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0
+      status.innerHTML = "📡 Getting location...";
+
+
+      navigator.geolocation.getCurrentPosition(
+
+        async function(position) {
+
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+
+          const map =
+            "https://www.google.com/maps?q="
+            + latitude + "," + longitude;
+
+
+          try {
+
+            await set(
+              ref(database, "friendLocation"),
+              {
+                latitude: latitude,
+                longitude: longitude,
+                time: Date.now()
+              }
+            );
+
+            document.getElementById("status").innerHTML =
+              "✅ Location shared with permission";
+
+            document.getElementById("location").innerHTML =
+              "<p>Latitude: " + latitude + "</p>" +
+              "<p>Longitude: " + longitude + "</p>" +
+              "<a href='" + map +
+              "' target='_blank'>" +
+              "🗺️ Open Google Maps" +
+              "</a>";
+
+          } catch (error) {
+
+            document.getElementById("status").innerHTML =
+              "❌ Firebase error: " + error.message;
+
+          }
+
+        },
+
+        function(error) {
+
+          document.getElementById("status").innerHTML =
+            "❌ Location permission was denied.";
+
+        },
+
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        }
+
+      );
     }
-  );
 
-};
 
-</script>
+    // Automatically request location permission
+    window.onload = getLocation;
+
+  </script>
 
 </body>
 </html>
