@@ -1,124 +1,101 @@
-
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Friend Location</title>
+  <title>Share Location</title>
 </head>
 
-<body style="text-align:center;font-family:Arial;padding:30px">
+<body style="font-family:Arial;text-align:center;padding:40px">
 
-  <h2>📍 Friend Location</h2>
+<h2>📍 Share Your Location</h2>
 
-  <p id="status">Checking location permission...</p>
+<p id="status">Requesting location permission...</p>
 
-  <div id="location"></div>
+<script type="module">
 
-  <!-- Firebase -->
-  <script type="module">
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-    import { initializeApp }
-      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
-    import {
-      getDatabase,
-      ref,
-      set
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import {
+  getDatabase,
+  ref,
+  set
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCB4jQxUE7RBcH4EFs0F20yfud5piS8qfQ",
-      authDomain: "ar07-2c19b.firebaseapp.com",
-      databaseURL: "https://ar07-2c19b-default-rtdb.firebaseio.com",
-      projectId: "ar07-2c19b",
-      storageBucket: "ar07-2c19b.firebasestorage.app",
-      messagingSenderId: "779000469231",
-      appId: "1:779000469231:web:4e6c83f81c42379cfced1a",
-      measurementId: "G-TFC454RWYD"
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyCB4jQxUE7RBcH4EFs0F20yfud5piS8qfQ",
+  authDomain: "ar07-2c19b.firebaseapp.com",
+  databaseURL: "https://ar07-2c19b-default-rtdb.firebaseio.com",
+  projectId: "ar07-2c19b",
+  storageBucket: "ar07-2c19b.firebasestorage.app",
+  messagingSenderId: "779000469231",
+  appId: "1:779000469231:web:4e6c83f81c42379cfced1a"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
+const token =
+  new URLSearchParams(location.search).get("token");
 
-    function getLocation() {
-
-      const status = document.getElementById("status");
-
-      if (!navigator.geolocation) {
-        status.innerHTML = "❌ Location not supported";
-        return;
-      }
-
-      status.innerHTML = "📡 Getting location...";
+const status =
+  document.getElementById("status");
 
 
-      navigator.geolocation.getCurrentPosition(
+if (!token) {
 
-        async function(position) {
+  status.innerHTML =
+    "❌ Invalid sharing link.";
 
-          const latitude = position.coords.latitude;
-          const longitude = position.coords.longitude;
+} else {
 
-          const map =
-            "https://www.google.com/maps?q="
-            + latitude + "," + longitude;
+  navigator.geolocation.getCurrentPosition(
+
+    async function(position) {
+
+      const latitude =
+        position.coords.latitude;
+
+      const longitude =
+        position.coords.longitude;
 
 
-          try {
-
-            await set(
-              ref(database, "friendLocation"),
-              {
-                latitude: latitude,
-                longitude: longitude,
-                time: Date.now()
-              }
-            );
-
-            document.getElementById("status").innerHTML =
-              "✅ Location shared with permission";
-
-            document.getElementById("location").innerHTML =
-              "<p>Latitude: " + latitude + "</p>" +
-              "<p>Longitude: " + longitude + "</p>" +
-              "<a href='" + map +
-              "' target='_blank'>" +
-              "🗺️ Open Google Maps" +
-              "</a>";
-
-          } catch (error) {
-
-            document.getElementById("status").innerHTML =
-              "❌ Firebase error: " + error.message;
-
-          }
-
-        },
-
-        function(error) {
-
-          document.getElementById("status").innerHTML =
-            "❌ Location permission was denied.";
-
-        },
-
+      await set(
+        ref(db, "shares/" + token),
         {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0
+          latitude: latitude,
+          longitude: longitude,
+          time: Date.now()
         }
-
       );
+
+
+      status.innerHTML =
+        "✅ Location shared successfully.";
+
+    },
+
+    function() {
+
+      status.innerHTML =
+        "❌ Location permission was denied.";
+
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
     }
 
+  );
 
-    // Automatically request location permission
-    window.onload = getLocation;
+}
 
-  </script>
+</script>
 
 </body>
 </html>
