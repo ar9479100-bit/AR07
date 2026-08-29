@@ -1,101 +1,168 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Share Location</title>
-</head>
+  <title>Friend Location</title>
 
-<body style="font-family:Arial;text-align:center;padding:40px">
-
-<h2>📍 Share Your Location</h2>
-
-<p id="status">Requesting location permission...</p>
-
-<script type="module">
-
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
-import {
-  getDatabase,
-  ref,
-  set
-}
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCB4jQxUE7RBcH4EFs0F20yfud5piS8qfQ",
-  authDomain: "ar07-2c19b.firebaseapp.com",
-  databaseURL: "https://ar07-2c19b-default-rtdb.firebaseio.com",
-  projectId: "ar07-2c19b",
-  storageBucket: "ar07-2c19b.firebasestorage.app",
-  messagingSenderId: "779000469231",
-  appId: "1:779000469231:web:4e6c83f81c42379cfced1a"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-const token =
-  new URLSearchParams(location.search).get("token");
-
-const status =
-  document.getElementById("status");
-
-
-if (!token) {
-
-  status.innerHTML =
-    "❌ Invalid sharing link.";
-
-} else {
-
-  navigator.geolocation.getCurrentPosition(
-
-    async function(position) {
-
-      const latitude =
-        position.coords.latitude;
-
-      const longitude =
-        position.coords.longitude;
-
-
-      await set(
-        ref(db, "shares/" + token),
-        {
-          latitude: latitude,
-          longitude: longitude,
-          time: Date.now()
-        }
-      );
-
-
-      status.innerHTML =
-        "✅ Location shared successfully.";
-
-    },
-
-    function() {
-
-      status.innerHTML =
-        "❌ Location permission was denied.";
-
-    },
-
-    {
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f2f5f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
     }
 
-  );
+    .box {
+      width: 90%;
+      max-width: 400px;
+      background: white;
+      padding: 25px;
+      border-radius: 18px;
+      text-align: center;
+      box-shadow: 0 5px 25px rgba(0,0,0,0.12);
+    }
 
-}
+    h1 {
+      margin-bottom: 10px;
+    }
 
-</script>
+    p {
+      color: #555;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      background: #1976d2;
+      color: white;
+      font-size: 17px;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #999;
+    }
+
+    #result {
+      margin-top: 20px;
+      word-break: break-word;
+    }
+
+    a {
+      color: #1976d2;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="box">
+    <h1>📍 Friend Location</h1>
+
+    <p>
+      Tap the button and allow location permission
+      to share your current location.
+    </p>
+
+    <button id="shareBtn" onclick="shareLocation()">
+      Share My Location
+    </button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+
+    const APPS_SCRIPT_URL =
+      "https://script.google.com/macros/s/AKfycbzIhvt8335bf38xNj2vHPKNK1JvPg2npi1czh-2QsCJaLWEew9qoTAhHCpa7rrWmSri3A/exec";
+
+    function shareLocation() {
+
+      const button = document.getElementById("shareBtn");
+      const result = document.getElementById("result");
+
+      if (!navigator.geolocation) {
+        result.innerHTML = "❌ Location is not supported on this browser.";
+        return;
+      }
+
+      button.disabled = true;
+      button.innerText = "Getting location...";
+
+      navigator.geolocation.getCurrentPosition(
+
+        async function(position) {
+
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+
+          const data = {
+            latitude: latitude,
+            longitude: longitude,
+            timestamp: new Date().toISOString()
+          };
+
+          try {
+
+            await fetch(APPS_SCRIPT_URL, {
+              method: "POST",
+              headers: {
+                "Content-Type": "text/plain;charset=utf-8"
+              },
+              body: JSON.stringify(data)
+            });
+
+            const mapLink =
+              "https://www.google.com/maps?q=" +
+              latitude + "," + longitude;
+
+            result.innerHTML =
+              "✅ Location shared successfully!<br><br>" +
+              '<a href="' + mapLink + '" target="_blank">' +
+              "Open Location in Google Maps" +
+              "</a>";
+
+          } catch (error) {
+
+            result.innerHTML =
+              "❌ Could not send location. Please try again.";
+
+          }
+
+          button.disabled = false;
+          button.innerText = "Share My Location";
+        },
+
+        function(error) {
+
+          button.disabled = false;
+          button.innerText = "Share My Location";
+
+          if (error.code === 1) {
+            result.innerHTML =
+              "❌ Location permission was denied.";
+          } else {
+            result.innerHTML =
+              "❌ Unable to get your location.";
+          }
+        },
+
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        }
+      );
+    }
+
+  </script>
 
 </body>
 </html>
